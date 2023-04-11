@@ -1,0 +1,81 @@
+# Import necessary libraries
+import speech_recognition as sr
+import pyttsx3
+import datetime
+import wikipedia
+import cv2
+import numpy as np
+import requests
+import json
+from bs4 import BeautifulSoup
+from pycoindesk import CoinDeskAPI
+from Cryptodome.PublicKey import RSA
+from Cryptodome.Signature import pkcs1_15
+
+# Initialize text-to-speech engine
+engine = pyttsx3.init()
+
+# Set voice for the assistant
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[0].id)
+
+# Function to convert text to speech
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+# Function to take user input through microphone
+def take_command():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        r.pause_threshold = 1
+        audio = r.listen(source)
+
+    try:
+        print("Recognizing...")
+        query = r.recognize_google(audio, language='en-in')
+        print(f"User said: {query}\n")
+
+    except Exception as e:
+        print("Say that again please...")
+        return "None"
+    return query
+
+# Function to greet the user
+def greet():
+    hour = int(datetime.datetime.now().hour)
+    if hour >= 0 and hour < 12:
+        speak("Good Morning!")
+    elif hour >= 12 and hour < 18:
+        speak("Good Afternoon!")
+    else:
+        speak("Good Evening!")
+    speak("I am your AI personal assistant. How can I help you?")
+
+# Function to recognize objects in an image
+def recognize_objects(image_path):
+    # Load the image
+    image = cv2.imread(image_path)
+
+    # Load the model and its configuration
+    net = cv2.dnn.readNetFromCaffe("MobileNetSSD_deploy.prototxt.txt", "MobileNetSSD_deploy.caffemodel")
+
+    # Define the classes of objects that the model can recognize
+    classes = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow",
+               "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train",
+               "tvmonitor"]
+
+    # Create a blob from the image and pass it through the network
+    blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 0.007843, (300, 300), 127.5)
+    net.setInput(blob)
+    detections = net.forward()
+
+    # Loop over the detections and draw a bounding box around the objects
+    for i in np.arange(0, detections.shape[2]):
+        confidence = detections[0, 0, i, 2]
+        if confidence > 0.5:
+            class_id = int(detections[0, 0, i, 1])
+            x1, y1, x2, y2 = int(detections[0, 0, i, 3] * image.shape[1]), int(
+                detections[0, 0, i, 4] * image.shape[0]), int(detections[0, 0, i, 5] * image.shape[1]), int(
+                detections[0, 0, i,
