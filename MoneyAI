@@ -78,4 +78,5 @@ def recognize_objects(image_path):
             class_id = int(detections[0, 0, i, 1])
             x1, y1, x2, y2 = int(detections[0, 0, i, 3] * image.shape[1]), int(
                 detections[0, 0, i, 4] * image.shape[0]), int(detections[0, 0, i, 5] * image.shape[1]), int(
-                detections[0, 0, i,
+                detections[0, 0, i, 6] * image.shape[0])
+           
